@@ -13,6 +13,16 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def write_outreach_hooks(out: Path) -> None:
+    hooks = (
+        "# Outreach Hooks\n\n"
+        "1. I assembled a swipe bundle your team can ship this week. Want the sample set?\n"
+        "2. We can package scripts by channel and buyer stage in one day.\n"
+        "3. If this is not relevant, reply unsubscribe and I will stop outreach.\n"
+    )
+    (out / "outreach_hooks.md").write_text(hooks, encoding="utf-8")
+
+
 def main() -> None:
     args = parse_args()
     out = Path(args.output)
@@ -26,12 +36,19 @@ def main() -> None:
             buckets[category].append(row)
 
     with open(out / "bundle_summary.csv", "w", encoding="utf-8", newline="") as f:
-        fields = ["category", "count", "suggested_price"]
+        fields = ["category", "count", "suggested_price", "stripe_link"]
         writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
         for cat, items in sorted(buckets.items()):
             suggested_price = 19 + len(items) * 2
-            writer.writerow({"category": cat, "count": len(items), "suggested_price": suggested_price})
+            writer.writerow(
+                {
+                    "category": cat,
+                    "count": len(items),
+                    "suggested_price": suggested_price,
+                    "stripe_link": "https://buy.stripe.com/swipe-growth-placeholder",
+                }
+            )
 
     for cat, items in buckets.items():
         md_lines = [f"# Swipe Bundle - {cat.title()}", ""]
@@ -46,6 +63,20 @@ def main() -> None:
                     "",
                 ]
             )
+        md_lines.extend(
+            [
+                "## Onboarding",
+                "- Form: https://forms.gle/swipe-onboarding-placeholder",
+                "",
+                "## Checkout",
+                "- Starter: https://buy.stripe.com/swipe-starter-placeholder",
+                "- Growth: https://buy.stripe.com/swipe-growth-placeholder",
+                "- Operator: https://buy.stripe.com/swipe-operator-placeholder",
+                "",
+                "## Outreach hook",
+                "Want a category-matched swipe pack for your current campaign sprint?",
+            ]
+        )
         (out / f"bundle_{cat}.md").write_text("\n".join(md_lines), encoding="utf-8")
 
     listing = (
@@ -56,11 +87,16 @@ def main() -> None:
         "- Starter: 25 swipes\n"
         "- Pro: 75 swipes\n"
         "- Agency: 150+ swipes\n\n"
+        "## Onboarding\n"
+        "- Form: https://forms.gle/swipe-onboarding-placeholder\n\n"
         "## Checkout\n"
-        "Payment link placeholder: https://buy.stripe.com/your-link\n"
+        "- Starter: https://buy.stripe.com/swipe-starter-placeholder\n"
+        "- Pro: https://buy.stripe.com/swipe-growth-placeholder\n"
+        "- Agency: https://buy.stripe.com/swipe-operator-placeholder\n"
     )
     (out / "listing_draft.md").write_text(listing, encoding="utf-8")
 
+    write_outreach_hooks(out)
     print(f"Generated {len(buckets)} bundles -> {out}")
 
 
